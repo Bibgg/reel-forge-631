@@ -66,7 +66,7 @@ fun ReferenceStylePlayer(file: File, onClose: () -> Unit) {
     var gestureHint by remember { mutableStateOf("") }
 
     DisposableEffect(activity) {
-        activity?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_FULL_SENSOR
+        activity?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_SENSOR
         onDispose {
             activity?.requestedOrientation = originalOrientation
         }
@@ -94,7 +94,7 @@ fun ReferenceStylePlayer(file: File, onClose: () -> Unit) {
             "Reverse portrait" -> ActivityInfo.SCREEN_ORIENTATION_REVERSE_PORTRAIT
             "Lock current" -> if (context.resources.configuration.orientation == android.content.res.Configuration.ORIENTATION_LANDSCAPE)
                 ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE else ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
-            else -> ActivityInfo.SCREEN_ORIENTATION_FULL_SENSOR
+            else -> ActivityInfo.SCREEN_ORIENTATION_SENSOR
         }
     }
 
