@@ -60,7 +60,7 @@ fun ReferenceStylePlayer(file: File, onClose: () -> Unit) {
     var duration by remember { mutableLongStateOf(0L) }
     var dragging by remember { mutableStateOf(false) }
     var speed by remember { mutableFloatStateOf(1f) }
-    var fitMode by remember { mutableStateOf("Fit") }
+    var fitMode by remember { mutableStateOf("Fill") }
     var quality by remember { mutableStateOf("Auto") }
     var menu by remember { mutableStateOf("") }
     var autoRotate by remember { mutableStateOf(true) }
@@ -69,6 +69,8 @@ fun ReferenceStylePlayer(file: File, onClose: () -> Unit) {
     var gestureHint by remember { mutableStateOf("") }
     var fullscreen by remember { mutableStateOf(true) }
     var videoIsPortrait by remember { mutableStateOf(false) }
+
+    val isFullscreen by rememberUpdatedState(fullscreen)
 
     // Match the phone orientation to the video's actual shape:
     // portrait reels stay portrait; landscape films switch to landscape fullscreen.
@@ -81,7 +83,7 @@ fun ReferenceStylePlayer(file: File, onClose: () -> Unit) {
                 val videoWidth = if (rotated) videoSize.height else videoSize.width
                 val videoHeight = if (rotated) videoSize.width else videoSize.height
                 videoIsPortrait = videoHeight > videoWidth
-                if (fullscreen) {
+                if (isFullscreen) {
                     activity?.requestedOrientation = if (videoIsPortrait) {
                         ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
                     } else {
