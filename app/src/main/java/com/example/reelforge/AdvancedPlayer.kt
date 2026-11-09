@@ -71,6 +71,7 @@ fun ReferenceStylePlayer(file: File, onClose: () -> Unit) {
     var videoIsPortrait by remember { mutableStateOf(false) }
 
     val isFullscreen by rememberUpdatedState(fullscreen)
+    val shouldAutoRotate by rememberUpdatedState(autoRotate)
 
     // Match the phone orientation to the video's actual shape:
     // portrait reels stay portrait; landscape films switch to landscape fullscreen.
@@ -83,7 +84,7 @@ fun ReferenceStylePlayer(file: File, onClose: () -> Unit) {
                 val videoWidth = if (rotated) videoSize.height else videoSize.width
                 val videoHeight = if (rotated) videoSize.width else videoSize.height
                 videoIsPortrait = videoHeight > videoWidth
-                if (isFullscreen) {
+                if (isFullscreen && shouldAutoRotate) {
                     activity?.requestedOrientation = if (videoIsPortrait) {
                         ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
                     } else {
@@ -106,8 +107,10 @@ fun ReferenceStylePlayer(file: File, onClose: () -> Unit) {
             controller?.hide(WindowInsetsCompat.Type.systemBars())
             controller?.systemBarsBehavior =
                 WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
-            if (videoIsPortrait) activity?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
-            else if (player.videoSize.width > 0) activity?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
+            if (autoRotate) {
+                if (videoIsPortrait) activity?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
+                else if (player.videoSize.width > 0) activity?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
+            }
         } else {
             controller?.show(WindowInsetsCompat.Type.systemBars())
             activity?.requestedOrientation = originalOrientation
@@ -153,7 +156,7 @@ fun ReferenceStylePlayer(file: File, onClose: () -> Unit) {
                 factory = { ctx ->
                     PlayerView(ctx).apply {
                         useController = false
-                        resizeMode = AspectRatioFrameLayout.RESIZE_MODE_FIT
+                        resizeMode = AspectRatioFrameLayout.RESIZE_MODE_ZOOM
                         this.player = player
                         setShutterBackgroundColor(android.graphics.Color.BLACK)
                     }
