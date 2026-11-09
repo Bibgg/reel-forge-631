@@ -29,6 +29,7 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.media3.common.C
 import androidx.media3.common.MediaItem
+import androidx.media3.common.Player
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.ui.AspectRatioFrameLayout
 import androidx.media3.ui.PlayerView
@@ -65,9 +66,26 @@ fun ReferenceStylePlayer(file: File, onClose: () -> Unit) {
     var zoom by remember { mutableFloatStateOf(1f) }
     var gestureHint by remember { mutableStateOf("") }
 
-    DisposableEffect(activity) {
-        activity?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_SENSOR
+    // Match the phone orientation to the video's actual shape:
+    // portrait reels stay portrait; landscape films switch to landscape fullscreen.
+    DisposableEffect(player, activity) {
+        val listener = object : Player.Listener {
+            override fun onVideoSizeChanged(videoSize: androidx.media3.common.VideoSize) {
+                if (videoSize.width <= 0 || videoSize.height <= 0) return
+                val rotated = videoSize.unappliedRotationDegrees == 90 ||
+                    videoSize.unappliedRotationDegrees == 270
+                val videoWidth = if (rotated) videoSize.height else videoSize.width
+                val videoHeight = if (rotated) videoSize.width else videoSize.height
+                activity?.requestedOrientation = if (videoHeight > videoWidth) {
+                    ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
+                } else {
+                    ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
+                }
+            }
+        }
+        player.addListener(listener)
         onDispose {
+            player.removeListener(listener)
             activity?.requestedOrientation = originalOrientation
         }
     }
@@ -87,14 +105,17 @@ fun ReferenceStylePlayer(file: File, onClose: () -> Unit) {
     fun rotateTo(label: String) {
         rotationLabel = label
         autoRotate = label == "Auto"
-        activity?.requestedOrientation = when (label) {
-            "Portrait" -> ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
-            "Landscape" -> ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
-            "Reverse landscape" -> ActivityInfo.SCREEN_ORIENTATION_REVERSE_LANDSCAPE
-            "Reverse portrait" -> ActivityInfo.SCREEN_ORIENTATION_REVERSE_PORTRAIT
-            "Lock current" -> if (context.resources.configuration.orientation == android.content.res.Configuration.ORIENTATION_LANDSCAPE)
-                ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE else ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
-            else -> ActivityInfo.SCREEN_ORIENTATION_SENSOR
+        // Auto follows the video's aspect ratio; manual choices remain available.
+        if (label != "Auto") {
+            activity?.requestedOrientation = when (label) {
+                "Portrait" -> ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
+                "Landscape" -> ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
+                "Reverse landscape" -> ActivityInfo.SCREEN_ORIENTATION_REVERSE_LANDSCAPE
+                "Reverse portrait" -> ActivityInfo.SCREEN_ORIENTATION_REVERSE_PORTRAIT
+                "Lock current" -> if (context.resources.configuration.orientation == android.content.res.Configuration.ORIENTATION_LANDSCAPE)
+                    ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE else ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
+                else -> ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
+            }
         }
     }
 
