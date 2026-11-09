@@ -45,24 +45,12 @@ fun ReelForgeApp() {
     Scaffold(
         bottomBar = {
             NavigationBar {
-                NavigationBarItem(
-                    selected = tab == 0,
-                    onClick = { tab = 0 },
-                    icon = { Text("⬆") },
-                    label = { Text("अपलोड") }
-                )
-                NavigationBarItem(
-                    selected = tab == 1,
-                    onClick = { tab = 1 },
-                    icon = { Text("▶") },
-                    label = { Text("वीडियो") }
-                )
-                NavigationBarItem(
-                    selected = tab == 2,
-                    onClick = { tab = 2 },
-                    icon = { Text("☰") },
-                    label = { Text("फ़ाइलें") }
-                )
+                NavigationBarItem(selected = tab == 0, onClick = { tab = 0 },
+                    icon = { Text("⬆") }, label = { Text("अपलोड") })
+                NavigationBarItem(selected = tab == 1, onClick = { tab = 1 },
+                    icon = { Text("▶") }, label = { Text("वीडियो") })
+                NavigationBarItem(selected = tab == 2, onClick = { tab = 2 },
+                    icon = { Text("☰") }, label = { Text("फ़ाइलें") })
             }
         }
     ) { padding ->
@@ -79,6 +67,6 @@ fun ReelForgeApp() {
     }
 
     playing?.let { file ->
-        PlayerDialog(file = file, onClose = { playing = null })
+        ReferenceStylePlayer(file = file, onClose = { playing = null })
     }
 }
