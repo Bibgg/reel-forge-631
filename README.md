@@ -17,4 +17,4 @@ Kotlin और Jetpack Compose वाला Android सोशल मीडिय�
 
 ## APK कैसे बनाएँ
 
-GitHub पर **Actions** टैब खोलिए, **Build Android APK** चुनिए और **Run workflow** दबाइए (या `main` में कुछ भी पुश कीजिए)। बिल्ड पूरा होने पर `ReelForge-debug-APK` नाम का आर्टिफ़ैक्ट डाउनलोड कीजिए।
+GitHub पर **Actions** टैब खोलिए, **Build Android APK** चुनिए और **Run workflow** दबाइए (या `main` में कुछ भी पुश कीजिए)। बिल्ड पूरा होने पर `ReelForge-APK-and-AAB` नाम का आर्टिफ़ैक्ट डाउनलोड कीजिए।
