@@ -5,6 +5,8 @@ import android.content.pm.ActivityInfo
 import android.content.Context
 import android.media.AudioManager
 import android.view.WindowManager
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.WindowInsetsControllerCompat
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTapGestures
@@ -65,6 +67,8 @@ fun ReferenceStylePlayer(file: File, onClose: () -> Unit) {
     var rotationLabel by remember { mutableStateOf("Auto") }
     var zoom by remember { mutableFloatStateOf(1f) }
     var gestureHint by remember { mutableStateOf("") }
+    var fullscreen by remember { mutableStateOf(true) }
+    var videoIsPortrait by remember { mutableStateOf(false) }
 
     // Match the phone orientation to the video's actual shape:
     // portrait reels stay portrait; landscape films switch to landscape fullscreen.
@@ -76,10 +80,13 @@ fun ReferenceStylePlayer(file: File, onClose: () -> Unit) {
                     videoSize.unappliedRotationDegrees == 270
                 val videoWidth = if (rotated) videoSize.height else videoSize.width
                 val videoHeight = if (rotated) videoSize.width else videoSize.height
-                activity?.requestedOrientation = if (videoHeight > videoWidth) {
-                    ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
-                } else {
-                    ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
+                videoIsPortrait = videoHeight > videoWidth
+                if (fullscreen) {
+                    activity?.requestedOrientation = if (videoIsPortrait) {
+                        ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
+                    } else {
+                        ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
+                    }
                 }
             }
         }
@@ -88,6 +95,22 @@ fun ReferenceStylePlayer(file: File, onClose: () -> Unit) {
             player.removeListener(listener)
             activity?.requestedOrientation = originalOrientation
         }
+    }
+
+    DisposableEffect(activity, fullscreen) {
+        val window = activity?.window
+        val controller = window?.let { WindowInsetsControllerCompat(it, it.decorView) }
+        if (fullscreen) {
+            controller?.hide(WindowInsetsCompat.Type.systemBars())
+            controller?.systemBarsBehavior =
+                WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+            if (videoIsPortrait) activity?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
+            else if (player.videoSize.width > 0) activity?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
+        } else {
+            controller?.show(WindowInsetsCompat.Type.systemBars())
+            activity?.requestedOrientation = originalOrientation
+        }
+        onDispose { controller?.show(WindowInsetsCompat.Type.systemBars()) }
     }
 
     LaunchedEffect(player) {
@@ -221,6 +244,11 @@ fun ReferenceStylePlayer(file: File, onClose: () -> Unit) {
                         }
                         Text("↻", color = Color.White, fontSize = 25.sp,
                             modifier = Modifier.clickable { menu = "rotation" }.padding(8.dp))
+                        Text(if (fullscreen) "⤢" else "⛶", color = Color.White, fontSize = 25.sp,
+                            modifier = Modifier.clickable {
+                                fullscreen = !fullscreen
+                                controlsVisible = true
+                            }.padding(8.dp))
                         Text("⚙", color = Color.White, fontSize = 23.sp,
                             modifier = Modifier.clickable { menu = "settings" }.padding(8.dp))
                     }
