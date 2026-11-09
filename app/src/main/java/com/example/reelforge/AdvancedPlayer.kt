@@ -8,6 +8,7 @@ import android.view.WindowManager
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.gestures.detectTransformGestures
 import androidx.compose.foundation.gestures.detectVerticalDragGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -107,7 +108,7 @@ fun ReferenceStylePlayer(file: File, onClose: () -> Unit) {
                     PlayerView(ctx).apply {
                         useController = false
                         resizeMode = AspectRatioFrameLayout.RESIZE_MODE_FIT
-                        player = this@ReferenceStylePlayer.let { player }
+                        this.player = player
                         setShutterBackgroundColor(android.graphics.Color.BLACK)
                     }
                 },
@@ -137,6 +138,11 @@ fun ReferenceStylePlayer(file: File, onClose: () -> Unit) {
                                 }
                             }
                         )
+                    }
+                    .pointerInput(Unit) {
+                        detectTransformGestures { _, _, zoomChange, _ ->
+                            zoom = (zoom * zoomChange).coerceIn(1f, 3f)
+                        }
                     }
                     .pointerInput(locked) {
                         var totalDrag = 0f
