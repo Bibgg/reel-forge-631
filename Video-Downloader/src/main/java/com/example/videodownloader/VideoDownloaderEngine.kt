@@ -13,7 +13,6 @@ import org.schabi.newpipe.extractor.downloader.Downloader
 import org.schabi.newpipe.extractor.downloader.Request
 import org.schabi.newpipe.extractor.downloader.Response
 import org.schabi.newpipe.extractor.stream.DeliveryMethod
-import dev.ffmpegkit_maintained.ytdlp.DownloadProgressCallback
 import dev.ffmpegkit_maintained.ytdlp.YtDlp
 import dev.ffmpegkit_maintained.ytdlp.YtDlpRequest
 import okhttp3.OkHttpClient
@@ -48,9 +47,8 @@ data class ExtractionResult(
 data class DownloadReceipt(val fileName: String, val savedLocation: String)
 
 /**
- * NewPipe Extractor integration plus Android DownloadManager.
- * Upstream currently supports YouTube, SoundCloud, media.ccc.de, PeerTube and Bandcamp.
- * Instagram, TikTok, Facebook and X are detected but not scraped or bypassed here.
+ * NewPipe Extractor for its native supported services, yt-dlp for broad multi-site
+ * downloads, and Android DownloadManager for progressive NewPipe streams.
  */
 object VideoDownloaderEngine {
     private const val USER_AGENT =
