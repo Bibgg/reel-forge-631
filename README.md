@@ -1,20 +1,30 @@
-# ReelForge
+# ReelForge — Android video app
 
-Kotlin और Jetpack Compose वाला Android सोशल मीडिया ऐप (शुरुआती वर्ज़न)।
+Kotlin और Jetpack Compose पर बना Android ऐप।
 
-## अभी क्या है
+## सुविधाएँ
 
-- **अपलोड** टैब: गैलरी से वीडियो चुनकर ऐप में सेव करना
-- **वीडियो** टैब: सेव किए वीडियो की थंबनेल वाला ग्रिड, टैप करने पर फ़ुलस्क्रीन प्ले
-- **फ़ाइलें** टैब: वीडियो फ़ाइलों की लिस्ट (नाम और साइज़)
+- गैलरी से वीडियो चुनकर ऐप में सेव करना
+- सेव किए वीडियो की ग्रिड और फ़ाइल सूची
+- फ़ुलस्क्रीन Media3 वीडियो प्लेयर
+- Video Downloader टैब: NewPipe Extractor से upstream-supported सेवाओं की स्ट्रीम जाँच और Android DownloadManager से डाउनलोड
+- सीधे MP4/WebM जैसे अधिकृत media-file links डाउनलोड करना
 
-अभी वीडियो सिर्फ़ फ़ोन के अंदर ऐप के स्टोरेज में सेव होते हैं। सर्वर पर अपलोड अगला कदम है।
+## Downloader support की स्थिति
+
+NewPipe Extractor upstream: YouTube, SoundCloud, media.ccc.de, PeerTube (no P2P), Bandcamp.
+
+Instagram, TikTok, Facebook और X/Twitter लिंक पहचाने जाते हैं, लेकिन NewPipe Extractor इन्हें सपोर्ट नहीं करता। इनके लिए अलग अधिकृत provider/API integration आवश्यक है। ऐप निजी सामग्री या platform restrictions bypass नहीं करता।
+
+Downloader module का कोड, setup और third-party license notice `Video-Downloader/` में है। NewPipe Extractor GPL-3.0-or-later है; वितरण से पहले GPL की शर्तें पूरी करें।
 
 ## तकनीकी जानकारी
 
-- पैकेज: `com.example.reelforge`, minSdk 24, targetSdk 34
-- Gradle 8.9, AGP 8.5.2, Kotlin 2.0.20
+- Package: `com.example.reelforge`
+- minSdk 24, targetSdk 34
+- AGP 8.5.2, Kotlin 2.0.20, Java 17
+- Gradle 8.9 in GitHub Actions
 
-## APK कैसे बनाएँ
+## APK build
 
-GitHub पर **Actions** टैब खोलिए, **Build Android APK** चुनिए और **Run workflow** दबाइए (या `main` में कुछ भी पुश कीजिए)। बिल्ड पूरा होने पर `ReelForge-APK-and-AAB` नाम का आर्टिफ़ैक्ट डाउनलोड कीजिए।
+GitHub पर Actions टैब खोलें और Build Android APK and AAB workflow चुनें। सफल build के बाद `ReelForge-APK-and-AAB` artifact डाउनलोड करें।
