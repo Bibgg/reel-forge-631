@@ -1,36 +1,24 @@
-# ReelForge — Android video app
+# Video Downloader — Android
 
-Kotlin और Jetpack Compose पर बना Android ऐप।
+यह प्रोजेक्ट अब केवल Android वीडियो/ऑडियो डाउनलोडर है। पुराने वीडियो अपलोड, लोकल वीडियो लाइब्रेरी, फ़ाइल ब्राउज़र और इन-ऐप वीडियो प्लेयर फीचर हटा दिए गए हैं।
 
-## सुविधाएँ
-
-- गैलरी से वीडियो चुनकर ऐप में सेव करना
-- सेव किए वीडियो की ग्रिड और फ़ाइल सूची
-- फ़ुलस्क्रीन Media3 वीडियो प्लेयर
-- Video Downloader टैब: NewPipe Extractor और yt-dlp-android के जरिए वीडियो लिंक जाँचना और डाउनलोड करना
-- Android 10+ पर डाउनलोड सार्वजनिक Downloads/ReelForge फ़ोल्डर में सेव होते हैं
+## मुख्य सुविधाएँ
+- वीडियो लिंक जाँचने और उपलब्ध डाउनलोड विकल्प दिखाने की व्यवस्था
+- NewPipe Extractor और yt-dlp-android आधारित extraction/download engines
+- Android DownloadManager और MediaStore के जरिए सार्वजनिक मोबाइल स्टोरेज में सेव करना
+- वीडियो: `Movies/VideoDownloader`
+- ऑडियो: `Music/VideoDownloader`
+- Android Gallery/Media ऐप्स के लिए MediaStore indexing (Android 10+)
 
 ## Platform support
+- NewPipe Extractor: YouTube, SoundCloud, media.ccc.de, PeerTube और Bandcamp के समर्थित streams.
+- yt-dlp-android: अनेक साइटों के लिए extraction की कोशिश; हर URL या हर platform की सफलता की गारंटी नहीं।
+- Instagram, TikTok, Facebook और X/Twitter के लिए platform restrictions, login/cookies या बदलते APIs के कारण कुछ लिंक काम नहीं कर सकते।
+- DRM, निजी सामग्री या login/security restrictions bypass नहीं किए जाते। केवल वही सामग्री डाउनलोड करें जिसे सेव करने की अनुमति है।
 
-- NewPipe Extractor: YouTube, SoundCloud, media.ccc.de, PeerTube (no P2P), Bandcamp.
-- yt-dlp-android: 1000+ extractors का दावा; Instagram, TikTok, Facebook और X/Twitter सहित कई साइटों पर डाउनलोड की कोशिश।
-- हर URL के काम करने की गारंटी नहीं है। कुछ साइटों पर cookies या login की जरूरत हो सकती है; free yt-dlp-android build में curl-cffi TLS impersonation नहीं है।
-- DRM, निजी सामग्री या login restrictions bypass नहीं किए जाते। केवल अधिकृत वीडियो डाउनलोड करें।
+## Third-party licenses
+Downloader module और third-party notices: `Video-Downloader/`.
+NewPipe Extractor GPL-3.0-or-later है; app को distribute करने से पहले GPL obligations और bundled dependency notices का पालन करें।
 
-## Downloader module
-
-पूरा module, setup और third-party licenses: Video-Downloader/
-
-ध्यान दें: NewPipe Extractor GPL-3.0-or-later है। Combined app distribute करने पर GPL की source-sharing और license obligations लागू हो सकती हैं। yt-dlp-android wrapper MIT है; उसके bundled components के notices module में शामिल हैं।
-
-## तकनीकी जानकारी
-
-- Package: com.example.reelforge
-- minSdk 24, targetSdk 34
-- AGP 8.5.2, Kotlin 2.0.20, Java 17
-- Native ABIs: arm64-v8a और x86_64
-- yt-dlp-android AAR लगभग 60–80 MB अतिरिक्त आकार जोड़ सकता है
-
-## APK build
-
-GitHub पर Actions टैब खोलें और Build Android APK and AAB workflow चुनें। सफल build के बाद ReelForge-APK-and-AAB artifact डाउनलोड करें।
+## Build
+GitHub Actions में **Android APK Build** workflow चलाएँ। सफल build के बाद `ReelForge-debug-apk` artifact से APK लें।
