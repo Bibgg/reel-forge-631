@@ -313,8 +313,9 @@ object VideoDownloaderEngine {
 
     private fun sanitizeFileName(value: String): String {
         val cleaned = value.substringBefore('?').substringBefore('#')
-            .replace(Regex("[\\\\/:*?\\"<>|\\\\p{Cntrl}]"), "_")
+            .filter { it.isLetterOrDigit() || it in "._- ()" }
             .trim().trim('.')
+            .replace(' ', '_')
         return cleaned.take(150).ifBlank { "download_${System.currentTimeMillis()}" }
     }
 
