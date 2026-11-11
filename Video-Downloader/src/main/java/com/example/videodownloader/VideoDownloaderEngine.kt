@@ -78,6 +78,22 @@ object VideoDownloaderEngine {
             ?.substringAfterLast('.', "")
             ?.lowercase(Locale.ROOT).orEmpty()
 
+        // First-party HTTP inspection: identify real files from response headers,
+        // redirects and Content-Disposition instead of relying only on URL suffixes.
+        val directFile = OwnLinkAnalyzer.inspect(url)
+        if (directFile != null) {
+            return@withContext ExtractionResult(
+                directFile.fileName.substringBeforeLast('.', "Direct file"),
+                platform ?: SourcePlatform.DIRECT,
+                listOf(MediaOption(
+                    "Direct download • ${directFile.mimeType}",
+                    directFile.finalUrl,
+                    directFile.extension,
+                    directFile.mimeType
+                ))
+            )
+        }
+
         if (extension in setOf("mp4", "m4v", "webm", "mov", "mkv", "mp3", "m4a", "aac", "ogg")) {
             return@withContext ExtractionResult(
                 "Direct media file", platform ?: SourcePlatform.DIRECT,
