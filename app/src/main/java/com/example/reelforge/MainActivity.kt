@@ -51,6 +51,8 @@ fun ReelForgeApp() {
                     icon = { Text("▶") }, label = { Text("वीडियो") })
                 NavigationBarItem(selected = tab == 2, onClick = { tab = 2 },
                     icon = { Text("☰") }, label = { Text("फ़ाइलें") })
+                NavigationBarItem(selected = tab == 3, onClick = { tab = 3 },
+                    icon = { Text("⬇") }, label = { Text("डाउनलोड") })
             }
         }
     ) { padding ->
@@ -61,7 +63,8 @@ fun ReelForgeApp() {
                     tab = 1
                 })
                 1 -> VideosScreen(videos, onPlay = { playing = it })
-                else -> FilesScreen(videos, onPlay = { playing = it })
+                2 -> FilesScreen(videos, onPlay = { playing = it })
+                else -> DownloadScreen()
             }
         }
     }
