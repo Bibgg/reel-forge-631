@@ -85,7 +85,7 @@ object VideoDownloaderEngine {
         if (source in setOf(SourcePlatform.INSTAGRAM, SourcePlatform.TIKTOK,
                 SourcePlatform.FACEBOOK, SourcePlatform.X)) {
             throw UnsupportedOperationException(
-                "\${source.displayName} लिंक पहचाना गया, लेकिन NewPipeExtractor इसे सपोर्ट नहीं करता। " +
+                "${source.displayName} लिंक पहचाना गया, लेकिन NewPipeExtractor इसे सपोर्ट नहीं करता। " +
                     "इस प्लेटफॉर्म के लिए आधिकारिक/अनुमत integration अभी बाकी है; login या सुरक्षा-पाबंदी bypass नहीं किया जाएगा।"
             )
         }
