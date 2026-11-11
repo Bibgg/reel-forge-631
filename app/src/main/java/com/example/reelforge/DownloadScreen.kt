@@ -1,6 +1,8 @@
 package com.example.reelforge
 
 import android.widget.Toast
+import android.os.Handler
+import android.os.Looper
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -15,11 +17,13 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
@@ -41,6 +45,10 @@ fun DownloadScreen() {
     var loading by remember { mutableStateOf(false) }
     var result by remember { mutableStateOf<ExtractionResult?>(null) }
     var error by remember { mutableStateOf("") }
+    var ytdlpLoading by remember { mutableStateOf(false) }
+    var ytdlpProgress by remember { mutableFloatStateOf(0f) }
+    var ytdlpMessage by remember { mutableStateOf("") }
+    val mainHandler = remember { Handler(Looper.getMainLooper()) }
 
     Column(
         modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(18.dp),
@@ -85,6 +93,46 @@ fun DownloadScreen() {
             Text(if (loading) "जाँच हो रही है..." else "लिंक जाँचें")
         }
 
+
+        Button(
+            onClick = {
+                ytdlpLoading = true
+                ytdlpProgress = 0f
+                ytdlpMessage = "डाउनलोड शुरू हो रहा है..."
+                scope.launch {
+                    try {
+                        val receipt = VideoDownloaderEngine.downloadWithYtDlp(context, link) { percent, eta, line ->
+                            mainHandler.post {
+                                ytdlpProgress = percent.coerceIn(0f, 100f)
+                                if (line.isNotBlank()) ytdlpMessage = line
+                            }
+                        }
+                        ytdlpProgress = 100f
+                        ytdlpMessage = "सफल: ${receipt.fileName} — ${receipt.savedLocation}"
+                    } catch (e: Exception) {
+                        ytdlpMessage = e.cause?.message ?: e.message ?: "डाउनलोड पूरा नहीं हुआ।"
+                    } finally {
+                        ytdlpLoading = false
+                    }
+                }
+            },
+            enabled = link.isNotBlank() && !ytdlpLoading,
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            if (ytdlpLoading) {
+                CircularProgressIndicator()
+                Spacer(Modifier.width(10.dp))
+            }
+            Text(if (ytdlpLoading) "yt-dlp डाउनलोड चल रहा है..." else "yt-dlp से डाउनलोड करें")
+        }
+        if (ytdlpLoading || ytdlpMessage.isNotBlank()) {
+            LinearProgressIndicator(
+                progress = { (ytdlpProgress / 100f).coerceIn(0f, 1f) },
+                modifier = Modifier.fillMaxWidth()
+            )
+            Text(ytdlpMessage, style = MaterialTheme.typography.bodySmall)
+        }
+
         if (error.isNotBlank()) {
             Card(modifier = Modifier.fillMaxWidth()) {
                 Text(error, color = MaterialTheme.colorScheme.error, modifier = Modifier.padding(14.dp))
@@ -120,9 +168,10 @@ fun DownloadScreen() {
             }
         }
 
-        Text("Extractor से उपलब्ध सेवाएँ", style = MaterialTheme.typography.titleMedium)
+        Text("NewPipe Extractor से उपलब्ध सेवाएँ", style = MaterialTheme.typography.titleMedium)
+        Text("yt-dlp engine: 1000+ sites का support; सभी साइटों पर हर लिंक चलने की गारंटी नहीं है।")
         Text("YouTube • SoundCloud • PeerTube • Bandcamp • media.ccc.de")
-        Text("Instagram • TikTok • Facebook • X/Twitter: लिंक पहचाने जाते हैं, लेकिन NewPipeExtractor इन्हें सपोर्ट नहीं करता। इनके लिए अलग अधिकृत integration चाहिए।")
+        Text("Instagram • TikTok • Facebook • X/Twitter: yt-dlp engine से डाउनलोड की कोशिश की जाती है। कुछ लिंक पर platform की login, cookies या network restrictions के कारण डाउनलोड असफल हो सकता है।")
         Text(
             "केवल अपने वीडियो या ऐसे वीडियो डाउनलोड करें जिन्हें सेव करने की अनुमति हो। निजी सामग्री या प्लेटफॉर्म की सुरक्षा-पाबंदियों को bypass नहीं किया जाता।",
             style = MaterialTheme.typography.bodySmall,
