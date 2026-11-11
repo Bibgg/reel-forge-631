@@ -261,6 +261,63 @@ object VideoDownloaderEngine {
         return manager.enqueue(request)
     }
 
+    /**
+     * Downloads a direct HTTP(S) file URL of any ordinary file type.
+     * Videos/audio go to Gallery-visible media folders; documents, archives,
+     * images, APKs and other files go to Downloads/AllDownloader.
+     */
+    fun enqueueDirectUrl(context: Context, rawUrl: String): Long {
+        val parsed = Uri.parse(rawUrl.trim())
+        val scheme = parsed.scheme?.lowercase(Locale.ROOT)
+        require(scheme == "https" || scheme == "http") {
+            "सुरक्षित http:// या https:// फाइल लिंक डालिए।"
+        }
+        val host = parsed.host
+        require(!host.isNullOrBlank()) { "लिंक सही नहीं है।" }
+        val pathName = parsed.lastPathSegment
+            ?.substringAfterLast('/')
+            ?.takeIf { it.isNotBlank() }
+        val fileName = sanitizeFileName(pathName ?: "download_${System.currentTimeMillis()}")
+        val extension = fileName.substringAfterLast('.', "").lowercase(Locale.ROOT)
+        val mime = MimeTypeMap.getSingleton().getMimeTypeFromExtension(extension)
+            ?: when (extension) {
+                "apk" -> "application/vnd.android.package-archive"
+                "pdf" -> "application/pdf"
+                "zip" -> "application/zip"
+                "rar" -> "application/vnd.rar"
+                "7z" -> "application/x-7z-compressed"
+                else -> "application/octet-stream"
+            }
+        val folder = when {
+            mime.startsWith("video/") -> Environment.DIRECTORY_MOVIES
+            mime.startsWith("audio/") -> Environment.DIRECTORY_MUSIC
+            else -> Environment.DIRECTORY_DOWNLOADS
+        }
+        val relativeFolder = if (folder == Environment.DIRECTORY_DOWNLOADS) {
+            "AllDownloader"
+        } else {
+            "AllDownloader"
+        }
+        val request = DownloadManager.Request(parsed)
+            .setTitle(fileName)
+            .setDescription("ALL DOWNLOADER • $host")
+            .setMimeType(mime)
+            .setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
+            .setAllowedOverMetered(true)
+            .setAllowedOverRoaming(false)
+            .setDestinationInExternalPublicDir(folder, "$relativeFolder/$fileName")
+            .addRequestHeader("User-Agent", USER_AGENT)
+        val manager = context.getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
+        return manager.enqueue(request)
+    }
+
+    private fun sanitizeFileName(value: String): String {
+        val cleaned = value.substringBefore('?').substringBefore('#')
+            .replace(Regex("[\\\\/:*?\\"<>|\\\\p{Cntrl}]"), "_")
+            .trim().trim('.')
+        return cleaned.take(150).ifBlank { "download_${System.currentTimeMillis()}" }
+    }
+
     fun detectPlatform(rawUrl: String): SourcePlatform? {
         val host = Uri.parse(rawUrl).host?.lowercase(Locale.ROOT) ?: return null
         fun matches(domain: String) = host == domain || host.endsWith(".$domain")
