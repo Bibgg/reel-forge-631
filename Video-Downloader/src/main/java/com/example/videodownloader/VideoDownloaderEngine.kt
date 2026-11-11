@@ -137,7 +137,7 @@ object VideoDownloaderEngine {
 
     /**
      * Broad site support through yt-dlp. Output is first written to app storage,
-     * then copied into the public Downloads/ReelForge folder on Android 10+.
+     * then published into the public Movies/VideoDownloader folder so Gallery can index it.
      */
     suspend fun downloadWithYtDlp(
         context: Context,
@@ -176,34 +176,52 @@ object VideoDownloaderEngine {
             ?.maxByOrNull { it.lastModified() }
             ?: throw IllegalStateException("डाउनलोड पूरा हुआ, लेकिन वीडियो फ़ाइल नहीं मिली।")
 
-        val location = copyIntoPublicDownloads(context, downloaded)
+        val location = copyIntoPublicMedia(context, downloaded)
         DownloadReceipt(downloaded.name, location)
     }
 
-    private fun copyIntoPublicDownloads(context: Context, source: File): String {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) {
-            return source.absolutePath
-        }
-
+    private fun copyIntoPublicMedia(context: Context, source: File): String {
         val extension = source.extension.lowercase(Locale.ROOT)
         val mimeType = MimeTypeMap.getSingleton().getMimeTypeFromExtension(extension)
-            ?: "application/octet-stream"
+            ?: "video/mp4"
+        val isAudio = mimeType.startsWith("audio/")
+        val folder = if (isAudio) Environment.DIRECTORY_MUSIC else Environment.DIRECTORY_MOVIES
+
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) {
+            val legacyDir = File(
+                Environment.getExternalStoragePublicDirectory(folder),
+                "VideoDownloader"
+            ).apply { mkdirs() }
+            val destination = File(legacyDir, source.name)
+            source.copyTo(destination, overwrite = true)
+            android.media.MediaScannerConnection.scanFile(
+                context, arrayOf(destination.absolutePath), arrayOf(mimeType), null
+            )
+            source.delete()
+            return "$folder/VideoDownloader"
+        }
+
+        val collection = if (isAudio) {
+            MediaStore.Audio.Media.EXTERNAL_CONTENT_URI
+        } else {
+            MediaStore.Video.Media.EXTERNAL_CONTENT_URI
+        }
         val values = ContentValues().apply {
             put(MediaStore.MediaColumns.DISPLAY_NAME, source.name)
             put(MediaStore.MediaColumns.MIME_TYPE, mimeType)
             put(
                 MediaStore.MediaColumns.RELATIVE_PATH,
-                Environment.DIRECTORY_DOWNLOADS + "/ReelForge"
+                "$folder/VideoDownloader"
             )
             put(MediaStore.MediaColumns.IS_PENDING, 1)
         }
         val resolver = context.contentResolver
-        val uri = resolver.insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI, values)
-            ?: throw IllegalStateException("Downloads फ़ोल्डर में जगह नहीं बन पाई।")
+        val uri = resolver.insert(collection, values)
+            ?: throw IllegalStateException("मोबाइल मीडिया फ़ोल्डर में जगह नहीं बन पाई।")
 
         try {
             val output = resolver.openOutputStream(uri, "w")
-                ?: throw IllegalStateException("Downloads फ़ोल्डर में फ़ाइल नहीं लिखी जा सकी।")
+                ?: throw IllegalStateException("मोबाइल मीडिया फ़ोल्डर में फ़ाइल नहीं लिखी जा सकी।")
             output.use { destination ->
                 source.inputStream().use { input -> input.copyTo(destination) }
             }
@@ -212,7 +230,7 @@ object VideoDownloaderEngine {
             }
             resolver.update(uri, ready, null, null)
             source.delete()
-            return "Downloads/ReelForge"
+            return "$folder/VideoDownloader"
         } catch (error: Exception) {
             resolver.delete(uri, null, null)
             throw error
@@ -233,7 +251,10 @@ object VideoDownloaderEngine {
             .setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
             .setAllowedOverMetered(true)
             .setAllowedOverRoaming(false)
-            .setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS, fileName)
+            .setDestinationInExternalPublicDir(
+                Environment.DIRECTORY_MOVIES,
+                "VideoDownloader/$fileName"
+            )
             .addRequestHeader("User-Agent", USER_AGENT)
 
         val manager = context.getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
