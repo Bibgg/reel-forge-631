@@ -7,24 +7,30 @@ Kotlin और Jetpack Compose पर बना Android ऐप।
 - गैलरी से वीडियो चुनकर ऐप में सेव करना
 - सेव किए वीडियो की ग्रिड और फ़ाइल सूची
 - फ़ुलस्क्रीन Media3 वीडियो प्लेयर
-- Video Downloader टैब: NewPipe Extractor से upstream-supported सेवाओं की स्ट्रीम जाँच और Android DownloadManager से डाउनलोड
-- सीधे MP4/WebM जैसे अधिकृत media-file links डाउनलोड करना
+- Video Downloader टैब: NewPipe Extractor और yt-dlp-android के जरिए वीडियो लिंक जाँचना और डाउनलोड करना
+- Android 10+ पर डाउनलोड सार्वजनिक Downloads/ReelForge फ़ोल्डर में सेव होते हैं
 
-## Downloader support की स्थिति
+## Platform support
 
-NewPipe Extractor upstream: YouTube, SoundCloud, media.ccc.de, PeerTube (no P2P), Bandcamp.
+- NewPipe Extractor: YouTube, SoundCloud, media.ccc.de, PeerTube (no P2P), Bandcamp.
+- yt-dlp-android: 1000+ extractors का दावा; Instagram, TikTok, Facebook और X/Twitter सहित कई साइटों पर डाउनलोड की कोशिश।
+- हर URL के काम करने की गारंटी नहीं है। कुछ साइटों पर cookies या login की जरूरत हो सकती है; free yt-dlp-android build में curl-cffi TLS impersonation नहीं है।
+- DRM, निजी सामग्री या login restrictions bypass नहीं किए जाते। केवल अधिकृत वीडियो डाउनलोड करें।
 
-Instagram, TikTok, Facebook और X/Twitter लिंक पहचाने जाते हैं, लेकिन NewPipe Extractor इन्हें सपोर्ट नहीं करता। इनके लिए अलग अधिकृत provider/API integration आवश्यक है। ऐप निजी सामग्री या platform restrictions bypass नहीं करता।
+## Downloader module
 
-Downloader module का कोड, setup और third-party license notice `Video-Downloader/` में है। NewPipe Extractor GPL-3.0-or-later है; वितरण से पहले GPL की शर्तें पूरी करें।
+पूरा module, setup और third-party licenses: Video-Downloader/
+
+ध्यान दें: NewPipe Extractor GPL-3.0-or-later है। Combined app distribute करने पर GPL की source-sharing और license obligations लागू हो सकती हैं। yt-dlp-android wrapper MIT है; उसके bundled components के notices module में शामिल हैं।
 
 ## तकनीकी जानकारी
 
-- Package: `com.example.reelforge`
+- Package: com.example.reelforge
 - minSdk 24, targetSdk 34
 - AGP 8.5.2, Kotlin 2.0.20, Java 17
-- Gradle 8.9 in GitHub Actions
+- Native ABIs: arm64-v8a और x86_64
+- yt-dlp-android AAR लगभग 60–80 MB अतिरिक्त आकार जोड़ सकता है
 
 ## APK build
 
-GitHub पर Actions टैब खोलें और Build Android APK and AAB workflow चुनें। सफल build के बाद `ReelForge-APK-and-AAB` artifact डाउनलोड करें।
+GitHub पर Actions टैब खोलें और Build Android APK and AAB workflow चुनें। सफल build के बाद ReelForge-APK-and-AAB artifact डाउनलोड करें।
