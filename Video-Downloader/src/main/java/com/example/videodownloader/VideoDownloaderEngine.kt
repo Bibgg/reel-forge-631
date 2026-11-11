@@ -8,6 +8,7 @@ import org.schabi.newpipe.extractor.NewPipe
 import org.schabi.newpipe.extractor.downloader.Downloader
 import org.schabi.newpipe.extractor.downloader.Request
 import org.schabi.newpipe.extractor.downloader.Response
+import org.schabi.newpipe.extractor.stream.DeliveryMethod
 import okhttp3.OkHttpClient
 import okhttp3.RequestBody.Companion.toRequestBody
 import java.util.Locale
@@ -102,6 +103,7 @@ object VideoDownloaderEngine {
         val extractor = service.getStreamExtractor(url)
         extractor.fetchPage()
         val options = extractor.getVideoStreams()
+            .filter { it.getDeliveryMethod() == DeliveryMethod.PROGRESSIVE_HTTP }
             .filter { it.getContent().isNotBlank() }
             .map { stream ->
                 val format = stream.getFormat()
