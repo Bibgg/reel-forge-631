@@ -93,8 +93,8 @@ fun DownloadScreen() {
 
         result?.let { media ->
             Text(media.title, style = MaterialTheme.typography.titleLarge)
-            Text("स्रोत: \${media.platform.displayName}")
-            Text("डाउनलोड विकल्प: \${media.options.size}")
+            Text("स्रोत: ${media.platform.displayName}")
+            Text("डाउनलोड विकल्प: ${media.options.size}")
             media.options.forEach { option ->
                 Card(modifier = Modifier.fillMaxWidth()) {
                     Row(
@@ -103,7 +103,7 @@ fun DownloadScreen() {
                     ) {
                         Column(modifier = Modifier.weight(1f)) {
                             Text(option.label, style = MaterialTheme.typography.titleMedium)
-                            Text(".\${option.extension}", style = MaterialTheme.typography.bodySmall)
+                            Text(".${option.extension}", style = MaterialTheme.typography.bodySmall)
                         }
                         Button(onClick = {
                             try {
