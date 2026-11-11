@@ -1,31 +1,31 @@
 # ALL DOWNLOADER engine
 
-The project is moving toward a first-party, layered download architecture. NewPipeExtractor is a limited optional adapter, not the core engine.
+The project uses a layered architecture with first-party download code first and external extractors as limited adapters.
 
-## Engine layers
+## Download layers
 
-1. **OwnLinkAnalyzer** — first-party HTTP inspection. It follows ordinary redirects and checks response MIME type and Content-Disposition to recognize direct files even when the URL has no obvious extension.
-2. **Own HTTP transfer layer (next milestone)** — planned resumable/range-aware transfer, checksum validation, safe filename handling and retry policy for ordinary public file URLs.
-3. **yt-dlp adapter** — broad media-site extraction where the upstream extractor supports the source. Support is not guaranteed and changes over time.
-4. **NewPipe adapter** — limited fallback for services supported by NewPipeExtractor. Keep usage narrow; do not make it the primary architecture.
-5. **Android storage adapter** — DownloadManager/MediaStore for public device storage.
+1. **OwnLinkAnalyzer** — first-party HTTP inspection. It follows ordinary redirects and checks response MIME type and Content-Disposition to recognize direct files.
+2. **Android DownloadManager** — handles ordinary direct HTTP(S) file URLs and saves them to public device folders.
+3. **Embedded Python worker (yt-dlp-android)** — an in-app Python-backed worker for media extraction/download attempts when a direct file path is not appropriate or does not identify a downloadable media stream. The UI invokes this as **PYTHON WORKER FALLBACK**. It is a library-managed runtime, not an interactive system terminal; no arbitrary shell commands are exposed.
+4. **NewPipe adapter** — limited fallback for services supported by NewPipeExtractor. Keep usage narrow; it is not the core engine.
 
-## Current behavior
+## Python worker behavior
 
-- Direct media/file URLs can be downloaded with Android DownloadManager.
-- Media extraction currently uses the yt-dlp adapter; the NewPipe-based inspection path remains available for supported progressive streams.
-- OwnLinkAnalyzer is integrated as the first inspection step for direct HTTP files.
-- Planned improvements are not claimed as implemented until committed, built and tested.
+- Uses the embedded yt-dlp Android library and its bundled Python runtime.
+- Retries transient network/fragment failures and tries a small set of format fallbacks.
+- Writes to app-private temporary storage, then publishes completed media to the public media folder.
+- It cannot guarantee every URL. It does not bypass DRM, private-content controls, paywalls, login/security checks, CAPTCHAs, expiring access controls or platform enforcement.
+- It is intended for media the user owns or is authorized to save.
 
-## Safety and limitations
+## Current implementation notes
 
-- No extractor can guarantee every site or every URL.
-- The app does not bypass DRM, private-content controls, paywalls, login/security checks, CAPTCHAs, expiring access controls or platform enforcement.
-- Download only files and media that you own or are authorized to save.
-- Do not use the app to retrieve malware, stolen data or illicit material.
+- Direct file downloads use Android DownloadManager.
+- Media fallback is handled by the embedded Python worker.
+- NewPipe remains an optional adapter for its supported sources.
+- A failed direct DownloadManager task is not yet automatically detected and re-submitted to Python. That requires monitoring DownloadManager completion/failure and coordinating a retry without creating duplicate downloads; it remains a follow-up implementation task.
 
-## Dependencies and licenses
+## Licenses
 
-- NewPipe Extractor: GPL-3.0-or-later; included license and notices must be preserved.
-- yt-dlp-android: MIT wrapper; included notices must be preserved.
+- NewPipe Extractor: GPL-3.0-or-later; preserve required license and notices.
+- yt-dlp-android wrapper: MIT; preserve its notices.
 - OkHttp: Apache-2.0.
