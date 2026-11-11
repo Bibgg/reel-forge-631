@@ -155,6 +155,16 @@ object VideoDownloaderEngine {
      * Broad site support through yt-dlp. Output is first written to app storage,
      * then published into the public Movies/AllDownloader folder so Gallery can index it.
      */
+    /**
+     * Embedded Python/yt-dlp worker. The Android library hosts the runtime internally;
+     * this is not an interactive shell and does not expose arbitrary terminal commands.
+     */
+    suspend fun downloadWithPythonWorker(
+        context: Context,
+        rawUrl: String,
+        onProgress: (Float, Long, String) -> Unit
+    ): DownloadReceipt = downloadWithYtDlp(context, rawUrl, onProgress)
+
     suspend fun downloadWithYtDlp(
         context: Context,
         rawUrl: String,
