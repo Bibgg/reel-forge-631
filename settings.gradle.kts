@@ -15,5 +15,5 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "ReelForge"
+rootProject.name = "VideoDownloader"
 include(":app", ":Video-Downloader")
