@@ -137,7 +137,7 @@ object VideoDownloaderEngine {
 
     /**
      * Broad site support through yt-dlp. Output is first written to app storage,
-     * then published into the public Movies/VideoDownloader folder so Gallery can index it.
+     * then published into the public Movies/AllDownloader folder so Gallery can index it.
      */
     suspend fun downloadWithYtDlp(
         context: Context,
@@ -198,7 +198,7 @@ object VideoDownloaderEngine {
                 context, arrayOf(destination.absolutePath), arrayOf(mimeType), null
             )
             source.delete()
-            return "$folder/VideoDownloader"
+            return "$folder/AllDownloader"
         }
 
         val collection = if (isAudio) {
@@ -211,7 +211,7 @@ object VideoDownloaderEngine {
             put(MediaStore.MediaColumns.MIME_TYPE, mimeType)
             put(
                 MediaStore.MediaColumns.RELATIVE_PATH,
-                "$folder/VideoDownloader"
+                "$folder/AllDownloader"
             )
             put(MediaStore.MediaColumns.IS_PENDING, 1)
         }
@@ -230,7 +230,7 @@ object VideoDownloaderEngine {
             }
             resolver.update(uri, ready, null, null)
             source.delete()
-            return "$folder/VideoDownloader"
+            return "$folder/AllDownloader"
         } catch (error: Exception) {
             resolver.delete(uri, null, null)
             throw error
