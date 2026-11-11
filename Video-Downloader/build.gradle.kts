@@ -18,5 +18,6 @@ android {
 dependencies {
     api("com.github.teamnewpipe:NewPipeExtractor:v0.27.1")
     implementation("com.squareup.okhttp3:okhttp:4.12.0")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.9.0")
     coreLibraryDesugaring("com.android.tools:desugar_jdk_libs_nio:2.1.5")
 }
