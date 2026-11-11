@@ -2,8 +2,6 @@ package com.example.reelforge
 
 import android.content.Intent
 import android.net.Uri
-import android.widget.Toast
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -21,7 +19,6 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.FilterChip
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
@@ -62,10 +59,6 @@ fun DownloadScreen() {
     var progress by remember { mutableFloatStateOf(0f) }
     var status by remember { mutableStateOf("") }
     var error by remember { mutableStateOf("") }
-    var category by remember { mutableStateOf("All") }
-
-    val categories = listOf("All", "Video", "Audio", "Apps", "Files")
-
     fun isAppStoreLink(value: String): Boolean {
         val host = Uri.parse(value).host?.lowercase().orEmpty()
         return host == "play.google.com" || host.endsWith(".play.google.com")
@@ -114,16 +107,6 @@ fun DownloadScreen() {
                             cursorColor = Mint
                         )
                     )
-                    Text("फाइल का प्रकार", color = Muted, fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
-                    Row(horizontalArrangement = Arrangement.spacedBy(7.dp)) {
-                        categories.forEach { item ->
-                            FilterChip(
-                                selected = category == item,
-                                onClick = { category = item },
-                                label = { Text(item, fontSize = 11.sp) }
-                            )
-                        }
-                    }
                     Button(
                         onClick = {
                             val clean = link.trim()
@@ -151,7 +134,7 @@ fun DownloadScreen() {
                         shape = RoundedCornerShape(16.dp),
                         colors = ButtonDefaults.buttonColors(containerColor = Violet)
                     ) {
-                        Text("⚡  SMART FILE DOWNLOAD", fontWeight = FontWeight.Bold, letterSpacing = 0.5.sp)
+                        Text("⚡  DIRECT FILE / APK DOWNLOAD", fontWeight = FontWeight.Bold, letterSpacing = 0.5.sp)
                     }
                     Button(
                         onClick = {
