@@ -1,25 +1,31 @@
-# Video Downloader engine
+# ALL DOWNLOADER engine
 
-This Android library module contains the download engines used by the Video Downloader app:
+The project is moving toward a first-party, layered download architecture. NewPipeExtractor is a limited optional adapter, not the core engine.
 
-- NewPipe Extractor v0.27.1 for its supported services, including YouTube, SoundCloud, media.ccc.de, PeerTube (no P2P), and Bandcamp.
-- yt-dlp-android v2.0.2 for broad multi-site extraction attempts, including Instagram, TikTok, Facebook and X/Twitter where supported.
-- Android DownloadManager for progressive streams, saved under `Movies/AllDownloader`.
-- yt-dlp downloads are first written to app-private temporary storage, then published to public media storage. Android 10+ uses MediaStore so Gallery apps can index the downloaded media.
+## Engine layers
 
-## Important limitations
+1. **OwnLinkAnalyzer** — first-party HTTP inspection. It follows ordinary redirects and checks response MIME type and Content-Disposition to recognize direct files even when the URL has no obvious extension.
+2. **Own HTTP transfer layer (next milestone)** — planned resumable/range-aware transfer, checksum validation, safe filename handling and retry policy for ordinary public file URLs.
+3. **yt-dlp adapter** — broad media-site extraction where the upstream extractor supports the source. Support is not guaranteed and changes over time.
+4. **NewPipe adapter** — limited fallback for services supported by NewPipeExtractor. Keep usage narrow; do not make it the primary architecture.
+5. **Android storage adapter** — DownloadManager/MediaStore for public device storage.
 
-- Platform support changes; no extractor guarantees every URL works.
-- Some links may require cookies or be unavailable due to platform restrictions. DRM, private-content controls, and login/security restrictions are not bypassed.
-- yt-dlp-android bundles CPython and yt-dlp in a large AAR and supports arm64-v8a and x86_64 in this project.
-- Download only content you own or are authorized to save.
+## Current behavior
 
-## Dependencies
+- Direct media/file URLs can be downloaded with Android DownloadManager.
+- Media extraction currently uses the yt-dlp adapter; the NewPipe-based inspection path remains available for supported progressive streams.
+- OwnLinkAnalyzer is integrated as the first inspection step for direct HTTP files.
+- Planned improvements are not claimed as implemented until committed, built and tested.
 
-- NewPipe Extractor: `com.github.teamnewpipe:NewPipeExtractor:v0.27.1`
-- yt-dlp-android: `dev.ffmpegkit-maintained:yt-dlp-android:2.0.2`
-- Core library desugaring: `com.android.tools:desugar_jdk_libs_nio:2.1.5`
+## Safety and limitations
 
-## Licenses
+- No extractor can guarantee every site or every URL.
+- The app does not bypass DRM, private-content controls, paywalls, login/security checks, CAPTCHAs, expiring access controls or platform enforcement.
+- Download only files and media that you own or are authorized to save.
+- Do not use the app to retrieve malware, stolen data or illicit material.
 
-NewPipe Extractor is GPL-3.0-or-later. The yt-dlp-android wrapper is MIT. Preserve the included license and third-party notices, and comply with all applicable license obligations when distributing the app.
+## Dependencies and licenses
+
+- NewPipe Extractor: GPL-3.0-or-later; included license and notices must be preserved.
+- yt-dlp-android: MIT wrapper; included notices must be preserved.
+- OkHttp: Apache-2.0.
