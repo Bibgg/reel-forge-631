@@ -1,17 +1,25 @@
 package com.example.videodownloader
 
 import android.app.DownloadManager
+import android.content.ContentValues
 import android.content.Context
 import android.net.Uri
+import android.os.Build
 import android.os.Environment
+import android.provider.MediaStore
+import android.webkit.MimeTypeMap
 import org.schabi.newpipe.extractor.NewPipe
 import org.schabi.newpipe.extractor.downloader.Downloader
 import org.schabi.newpipe.extractor.downloader.Request
 import org.schabi.newpipe.extractor.downloader.Response
 import org.schabi.newpipe.extractor.stream.DeliveryMethod
+import dev.ffmpegkit_maintained.ytdlp.DownloadProgressCallback
+import dev.ffmpegkit_maintained.ytdlp.YtDlp
+import dev.ffmpegkit_maintained.ytdlp.YtDlpRequest
 import okhttp3.OkHttpClient
 import okhttp3.RequestBody
 import okhttp3.RequestBody.Companion.toRequestBody
+import java.io.File
 import java.util.Locale
 import java.util.concurrent.TimeUnit
 import kotlinx.coroutines.Dispatchers
@@ -36,6 +44,8 @@ data class ExtractionResult(
     val platform: SourcePlatform,
     val options: List<MediaOption>
 )
+
+data class DownloadReceipt(val fileName: String, val savedLocation: String)
 
 /**
  * NewPipe Extractor integration plus Android DownloadManager.
@@ -124,6 +134,91 @@ object VideoDownloaderEngine {
             )
         }
         ExtractionResult(extractor.getName().ifBlank { "Video" }, source, options)
+    }
+
+
+    /**
+     * Broad site support through yt-dlp. Output is first written to app storage,
+     * then copied into the public Downloads/ReelForge folder on Android 10+.
+     */
+    suspend fun downloadWithYtDlp(
+        context: Context,
+        rawUrl: String,
+        onProgress: (Float, Long, String) -> Unit
+    ): DownloadReceipt = withContext(Dispatchers.IO) {
+        val url = rawUrl.trim()
+        require(url.startsWith("https://", true) || url.startsWith("http://", true)) {
+            "कृपया पूरा https:// लिंक डालिए।"
+        }
+
+        YtDlp.init(context.applicationContext)
+        val outputDir = File(
+            context.getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS) ?: context.filesDir,
+            "ReelForgeDownloads"
+        ).apply { mkdirs() }
+
+        val uniquePrefix = "ReelForge_" + System.currentTimeMillis() + "_"
+        val outputTemplate = File(outputDir, uniquePrefix + "%(id)s.%(ext)s").absolutePath
+        val request = YtDlpRequest(url)
+            .setOutputTemplate(outputTemplate)
+            .addOption("--no-playlist")
+            .addOption("--no-mtime")
+            .addOption("-f", "best[height<=1080][ext=mp4]/best[height<=1080]/best")
+
+        val future = YtDlp.executeAsync(request) { progress, eta, line ->
+            onProgress(progress, eta, line)
+        }
+        val response = future.get()
+        if (!response.isSuccess) {
+            throw IllegalStateException("yt-dlp डाउनलोड विफल हुआ (exit code ${response.exitCode})")
+        }
+
+        val downloaded = outputDir.listFiles()
+            ?.filter { it.isFile && it.name.startsWith(uniquePrefix) }
+            ?.maxByOrNull { it.lastModified() }
+            ?: throw IllegalStateException("डाउनलोड पूरा हुआ, लेकिन वीडियो फ़ाइल नहीं मिली।")
+
+        val location = copyIntoPublicDownloads(context, downloaded)
+        DownloadReceipt(downloaded.name, location)
+    }
+
+    private fun copyIntoPublicDownloads(context: Context, source: File): String {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) {
+            return source.absolutePath
+        }
+
+        val extension = source.extension.lowercase(Locale.ROOT)
+        val mimeType = MimeTypeMap.getSingleton().getMimeTypeFromExtension(extension)
+            ?: "application/octet-stream"
+        val values = ContentValues().apply {
+            put(MediaStore.MediaColumns.DISPLAY_NAME, source.name)
+            put(MediaStore.MediaColumns.MIME_TYPE, mimeType)
+            put(
+                MediaStore.MediaColumns.RELATIVE_PATH,
+                Environment.DIRECTORY_DOWNLOADS + "/ReelForge"
+            )
+            put(MediaStore.MediaColumns.IS_PENDING, 1)
+        }
+        val resolver = context.contentResolver
+        val uri = resolver.insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI, values)
+            ?: throw IllegalStateException("Downloads फ़ोल्डर में जगह नहीं बन पाई।")
+
+        try {
+            val output = resolver.openOutputStream(uri, "w")
+                ?: throw IllegalStateException("Downloads फ़ोल्डर में फ़ाइल नहीं लिखी जा सकी।")
+            output.use { destination ->
+                source.inputStream().use { input -> input.copyTo(destination) }
+            }
+            val ready = ContentValues().apply {
+                put(MediaStore.MediaColumns.IS_PENDING, 0)
+            }
+            resolver.update(uri, ready, null, null)
+            source.delete()
+            return "Downloads/ReelForge"
+        } catch (error: Exception) {
+            resolver.delete(uri, null, null)
+            throw error
+        }
     }
 
     fun enqueue(context: Context, title: String, option: MediaOption): Long {
