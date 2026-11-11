@@ -157,18 +157,47 @@ object VideoDownloaderEngine {
 
         val uniquePrefix = "ReelForge_" + System.currentTimeMillis() + "_"
         val outputTemplate = File(outputDir, uniquePrefix + "%(id)s.%(ext)s").absolutePath
-        val request = YtDlpRequest(url)
-            .setOutputTemplate(outputTemplate)
-            .addOption("--no-playlist")
-            .addOption("--no-mtime")
-            .addOption("-f", "best[height<=1080][ext=mp4]/best[height<=1080]/best")
+        // Retry transient network/fragment failures, and use progressively broader
+        // format selectors. This improves resilience but cannot override source restrictions.
+        val formatFallbacks = listOf(
+            "best[height<=1080][ext=mp4]/best[height<=1080]/best",
+            "best[height<=1080]/best",
+            "best"
+        )
+        var lastExitCode = -1
+        var succeeded = false
+        for ((index, format) in formatFallbacks.withIndex()) {
+            val request = YtDlpRequest(url)
+                .setOutputTemplate(outputTemplate)
+                .addOption("--no-playlist")
+                .addOption("--no-mtime")
+                .addOption("--retries", "5")
+                .addOption("--fragment-retries", "5")
+                .addOption("--extractor-retries", "3")
+                .addOption("--file-access-retries", "3")
+                .addOption("--retry-sleep", "2")
+                .addOption("--socket-timeout", "30")
+                .addOption("--concurrent-fragments", "4")
+                .addOption("-f", format)
 
-        val future = YtDlp.executeAsync(request) { progress, eta, line ->
-            onProgress(progress, eta, line)
+            onProgress(0f, 0L, "डाउनलोड तरीका ${index + 1}/${formatFallbacks.size} आज़माया जा रहा है…")
+            val response = YtDlp.executeAsync(request) { progress, eta, line ->
+                onProgress(progress, eta, line)
+            }.get()
+            if (response.isSuccess) {
+                succeeded = true
+                break
+            }
+            lastExitCode = response.exitCode
+            if (index < formatFallbacks.lastIndex) {
+                onProgress(0f, 0L, "एक तरीका काम नहीं आया; दूसरे उपलब्ध format से कोशिश कर रहे हैं…")
+                Thread.sleep(1200L)
+            }
         }
-        val response = future.get()
-        if (!response.isSuccess) {
-            throw IllegalStateException("yt-dlp डाउनलोड विफल हुआ (exit code ${response.exitCode})")
+        if (!succeeded) {
+            throw IllegalStateException(
+                "सभी सुरक्षित डाउनलोड कोशिशें असफल रहीं (exit code $lastExitCode)। लिंक expired, login-required, unsupported या source-restricted हो सकता है।"
+            )
         }
 
         val downloaded = outputDir.listFiles()
