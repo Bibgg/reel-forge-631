@@ -54,9 +54,9 @@ fun DownloadScreen() {
         modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(18.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        Text("वीडियो डाउनलोडर", style = MaterialTheme.typography.headlineMedium)
+        Text("Video Downloader", style = MaterialTheme.typography.headlineMedium)
         Text(
-            "वीडियो लिंक पेस्ट करें। डाउनलोड पूरा होने पर वीडियो मोबाइल के Movies/VideoDownloader फ़ोल्डर और Gallery में दिखेगी।",
+            "वीडियो लिंक पेस्ट करें। डाउनलोड पूरा होने पर वीडियो मोबाइल के Movies/VideoDownloader फ़ोल्डर में सेव होगी और Gallery में दिखाई देगी।",
             style = MaterialTheme.typography.bodyMedium
         )
         OutlinedTextField(
@@ -168,8 +168,8 @@ fun DownloadScreen() {
             }
         }
 
-        Text("NewPipe Extractor से उपलब्ध सेवाएँ", style = MaterialTheme.typography.titleMedium)
-        Text("yt-dlp engine: 1000+ sites का support; सभी साइटों पर हर लिंक चलने की गारंटी नहीं है।")
+        Text("Supported download sources", style = MaterialTheme.typography.titleMedium)
+        Text("yt-dlp engine कई साइटों को support करता है; हर लिंक के काम करने की गारंटी नहीं है।")
         Text("YouTube • SoundCloud • PeerTube • Bandcamp • media.ccc.de")
         Text("Instagram • TikTok • Facebook • X/Twitter: yt-dlp engine से डाउनलोड की कोशिश की जाती है। कुछ लिंक पर platform की login, cookies या network restrictions के कारण डाउनलोड असफल हो सकता है।")
         Text(
