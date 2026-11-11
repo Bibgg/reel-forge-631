@@ -4,7 +4,7 @@ This Android library module contains the download engines used by the Video Down
 
 - NewPipe Extractor v0.27.1 for its supported services, including YouTube, SoundCloud, media.ccc.de, PeerTube (no P2P), and Bandcamp.
 - yt-dlp-android v2.0.2 for broad multi-site extraction attempts, including Instagram, TikTok, Facebook and X/Twitter where supported.
-- Android DownloadManager for progressive streams, saved under `Movies/VideoDownloader`.
+- Android DownloadManager for progressive streams, saved under `Movies/AllDownloader`.
 - yt-dlp downloads are first written to app-private temporary storage, then published to public media storage. Android 10+ uses MediaStore so Gallery apps can index the downloaded media.
 
 ## Important limitations
