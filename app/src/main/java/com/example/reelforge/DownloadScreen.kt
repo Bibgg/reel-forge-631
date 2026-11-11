@@ -56,7 +56,7 @@ fun DownloadScreen() {
     ) {
         Text("वीडियो डाउनलोडर", style = MaterialTheme.typography.headlineMedium)
         Text(
-            "वीडियो लिंक पेस्ट करें। ऐप उपलब्ध स्ट्रीम जाँचेगा और डाउनलोड विकल्प दिखाएगा।",
+            "वीडियो लिंक पेस्ट करें। डाउनलोड पूरा होने पर वीडियो मोबाइल के Movies/VideoDownloader फ़ोल्डर और Gallery में दिखेगी।",
             style = MaterialTheme.typography.bodyMedium
         )
         OutlinedTextField(
@@ -156,7 +156,7 @@ fun DownloadScreen() {
                         Button(onClick = {
                             try {
                                 VideoDownloaderEngine.enqueue(context, media.title, option)
-                                Toast.makeText(context, "डाउनलोड शुरू हुआ। Downloads फ़ोल्डर देखें।", Toast.LENGTH_LONG).show()
+                                Toast.makeText(context, "डाउनलोड शुरू हुआ। Gallery में Movies/VideoDownloader देखें।", Toast.LENGTH_LONG).show()
                             } catch (e: Exception) {
                                 Toast.makeText(context, e.message ?: "डाउनलोड शुरू नहीं हुआ।", Toast.LENGTH_LONG).show()
                             }
