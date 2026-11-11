@@ -140,11 +140,11 @@ fun DownloadScreen() {
                         onClick = {
                             busy = true
                             progress = 0f
-                            status = "मीडिया लिंक जाँचा जा रहा है..."
+                            status = "Embedded Python worker तैयार हो रहा है..."
                             error = ""
                             scope.launch {
                                 try {
-                                    val receipt = VideoDownloaderEngine.downloadWithYtDlp(context, link.trim()) { percent, _, line ->
+                                    val receipt = VideoDownloaderEngine.downloadWithPythonWorker(context, link.trim()) { percent, _, line ->
                                         progress = percent.coerceIn(0f, 100f)
                                         if (line.isNotBlank()) status = line
                                     }
@@ -164,7 +164,7 @@ fun DownloadScreen() {
                     ) {
                         if (busy) CircularProgressIndicator(modifier = Modifier.width(18.dp).height(18.dp), strokeWidth = 2.dp)
                         Spacer(Modifier.width(8.dp))
-                        Text(if (busy) "MEDIA DOWNLOAD RUNNING..." else "▶  VIDEO / AUDIO SMART EXTRACT", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 12.sp)
+                        Text(if (busy) "PYTHON WORKER RUNNING..." else "🐍  PYTHON WORKER FALLBACK", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 12.sp)
                     }
                     if (busy || progress > 0f) {
                         LinearProgressIndicator(
