@@ -190,7 +190,7 @@ object VideoDownloaderEngine {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) {
             val legacyDir = File(
                 Environment.getExternalStoragePublicDirectory(folder),
-                "VideoDownloader"
+                "AllDownloader"
             ).apply { mkdirs() }
             val destination = File(legacyDir, source.name)
             source.copyTo(destination, overwrite = true)
@@ -239,14 +239,14 @@ object VideoDownloaderEngine {
 
     fun enqueue(context: Context, title: String, option: MediaOption): Long {
         val safeTitle = title.replace(Regex("[^A-Za-z0-9._ -]"), "_")
-            .trim().take(70).ifBlank { "ReelForge-Video" }
+            .trim().take(70).ifBlank { "AllDownloader-Video" }
         val safeExtension = option.extension.lowercase(Locale.ROOT)
             .filter { it.isLetterOrDigit() }.ifBlank { "mp4" }
         val fileName = "$safeTitle.$safeExtension"
 
         val request = DownloadManager.Request(Uri.parse(option.url))
             .setTitle(fileName)
-            .setDescription("ReelForge video download")
+            .setDescription("ALL DOWNLOADER media download")
             .setMimeType(option.mimeType)
             .setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
             .setAllowedOverMetered(true)
