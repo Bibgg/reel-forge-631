@@ -4,8 +4,8 @@ This Android library module is wired into ReelForge. It combines two extraction 
 
 - NewPipe Extractor v0.27.1 for YouTube, SoundCloud, media.ccc.de, PeerTube (no P2P), and Bandcamp.
 - yt-dlp-android v2.0.2 for broad multi-site downloads (yt-dlp advertises 1000+ extractors), including attempts for Instagram, TikTok, Facebook and X/Twitter.
-- Android DownloadManager for NewPipe progressive streams.
-- yt-dlp downloads are written to app storage first, then copied into public Downloads/ReelForge on Android 10+.
+- Android DownloadManager for NewPipe progressive streams, saved under Movies/VideoDownloader.
+- yt-dlp downloads are written to app storage first, then published into public Movies/VideoDownloader using MediaStore on Android 10+ so Gallery can index it.
 
 ## Important limitations
 
