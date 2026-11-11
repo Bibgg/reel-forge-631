@@ -1,23 +1,25 @@
 # ReelForge Video Downloader
 
-This Android library module is wired into ReelForge and uses NewPipe Extractor v0.27.1.
+This Android library module is wired into ReelForge. It combines two extraction engines with Android download handling:
 
-## Current extraction support
+- NewPipe Extractor v0.27.1 for YouTube, SoundCloud, media.ccc.de, PeerTube (no P2P), and Bandcamp.
+- yt-dlp-android v2.0.2 for broad multi-site downloads (yt-dlp advertises 1000+ extractors), including attempts for Instagram, TikTok, Facebook and X/Twitter.
+- Android DownloadManager for NewPipe progressive streams.
+- yt-dlp downloads are written to app storage first, then copied into public Downloads/ReelForge on Android 10+.
 
-NewPipe Extractor upstream currently lists YouTube, SoundCloud, media.ccc.de, PeerTube (no P2P), and Bandcamp.
+## Important limitations
 
-The app recognizes Instagram, TikTok, Facebook and X/Twitter links, but the upstream extractor does not currently support those services. They are reported as unsupported instead of pretending to download them. A future integration must use an authorized provider/API and respect each service's terms, privacy controls and copyright rules.
+- Support varies by platform and changes over time. A listed extractor does not guarantee every URL works.
+- Some Instagram, TikTok, Facebook or X links may require cookies or be blocked by platform-side restrictions. The free yt-dlp-android build does not include curl-cffi TLS fingerprint impersonation. The app does not bypass DRM, private-content controls, or login restrictions.
+- yt-dlp-android bundles CPython 3.13 and yt-dlp in an AAR of approximately 60–80 MB. It supports arm64-v8a and x86_64 only; the app's native ABI filters are set accordingly.
+- Downloads should be limited to videos owned by the user or content the user is authorized to save. Respect platform terms and copyright law.
 
-Direct media-file URLs (for example, an authorized MP4 URL) can be sent to Android DownloadManager.
+## Gradle dependencies
 
-## Android integration
-
-- Module: :Video-Downloader
 - NewPipe Extractor: com.github.teamnewpipe:NewPipeExtractor:v0.27.1
-- Downloads are handled by Android DownloadManager and saved under the device's public Downloads folder.
-- Network extraction runs on Dispatchers.IO.
-- NewPipe Extractor requires Java 17 and core-library desugaring with desugar_jdk_libs_nio for minSdk below 33.
+- yt-dlp-android: dev.ffmpegkit-maintained:yt-dlp-android:2.0.2
+- Core library desugaring: com.android.tools:desugar_jdk_libs_nio:2.1.5
 
-## License notice
+## License notices
 
-NewPipe Extractor is licensed under GNU GPL v3 or later. See THIRD_PARTY_NOTICES.md and LICENSE-NewPipeExtractor. If distributing a combined app, comply with GPL obligations, including providing corresponding source and license notices.
+NewPipe Extractor is GPL-3.0-or-later. Its full license is in LICENSE-NewPipeExtractor. The yt-dlp-android wrapper is MIT; see LICENSE-yt-dlp-android and THIRD-PARTY-NOTICES-yt-dlp.txt for bundled third-party notices. Distribution of the combined app must comply with the NewPipe GPL obligations and preserve all third-party notices.
