@@ -15,8 +15,11 @@ data class DirectFileInfo(
 )
 
 /**
- * First-party direct HTTP file detection. It follows normal redirects and checks
- * headers/content type; it does not defeat authentication, DRM, paywalls or access controls.
+ * First-party direct HTTP file detection.
+ *
+ * Tries HEAD first, then a one-byte ranged GET for servers that reject HEAD.
+ * Only ordinary public HTTP(S) responses are inspected; this does not defeat
+ * authentication, DRM, paywalls, CAPTCHA or other access controls.
  */
 object OwnLinkAnalyzer {
     private val client = OkHttpClient.Builder()
@@ -33,20 +36,44 @@ object OwnLinkAnalyzer {
             .head()
             .header("User-Agent", "ALL-DOWNLOADER/1.0 (Android)")
             .build()
-        val response = try {
-            client.newCall(head).execute()
+
+        try {
+            client.newCall(head).execute().use { response ->
+                if (response.isSuccessful) {
+                    buildInfo(
+                        response.request.url.toString(),
+                        response.header("Content-Type"),
+                        response.header("Content-Disposition"),
+                        response.header("Content-Length")
+                    )?.let { return it }
+                }
+            }
         } catch (_: Exception) {
-            return null
+            // Some legitimate file hosts reject HEAD; try a bounded range request.
         }
 
-        response.use { result ->
-            if (!result.isSuccessful) return null
-            return buildInfo(
-                result.request.url.toString(),
-                result.header("Content-Type"),
-                result.header("Content-Disposition"),
-                result.header("Content-Length")
-            )
+        val rangedGet = Request.Builder().url(url)
+            .get()
+            .header("Range", "bytes=0-0")
+            .header("User-Agent", "ALL-DOWNLOADER/1.0 (Android)")
+            .build()
+
+        return try {
+            client.newCall(rangedGet).execute().use { response ->
+                if (!response.isSuccessful && response.code != 206) return null
+                val length = response.header("Content-Range")
+                    ?.substringAfterLast('/')
+                    ?.takeIf { it != "*" }
+                    ?: response.header("Content-Length")
+                buildInfo(
+                    response.request.url.toString(),
+                    response.header("Content-Type"),
+                    response.header("Content-Disposition"),
+                    length
+                )
+            }
+        } catch (_: Exception) {
+            null
         }
     }
 
