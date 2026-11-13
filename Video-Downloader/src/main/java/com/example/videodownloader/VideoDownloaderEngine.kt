@@ -50,10 +50,7 @@ data class YoutubeVideoInfo(
     val watchUrl: String
 )
 
-/**
- * NewPipe Extractor for its native supported services, yt-dlp for broad multi-site
- * downloads, and Android DownloadManager for progressive NewPipe streams.
- */
+/** First-party URL analysis and metadata, Android DownloadManager for direct files. */
 object VideoDownloaderEngine {
     private const val USER_AGENT =
         "Mozilla/5.0 (Linux; Android 14) AppleWebKit/537.36 Chrome/124.0 Mobile Safari/537.36"
@@ -166,6 +163,8 @@ object VideoDownloaderEngine {
         require(url.startsWith("https://", true) || url.startsWith("http://", true)) {
             "कृपया पूरा https:// लिंक डालिए।"
         }
+
+        require(youtubeVideoId(url) == null) { "YouTube page URLs are not direct media files; use YouTube official offline options." }
 
         YtDlp.init(context.applicationContext)
         val outputDir = File(
