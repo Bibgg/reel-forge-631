@@ -8,15 +8,11 @@ import android.os.Build
 import android.os.Environment
 import android.provider.MediaStore
 import android.webkit.MimeTypeMap
-import org.schabi.newpipe.extractor.NewPipe
-import org.schabi.newpipe.extractor.downloader.Downloader
-import org.schabi.newpipe.extractor.downloader.Request
-import org.schabi.newpipe.extractor.downloader.Response
-import org.schabi.newpipe.extractor.stream.DeliveryMethod
 import dev.ffmpegkit_maintained.ytdlp.YtDlp
 import dev.ffmpegkit_maintained.ytdlp.YtDlpRequest
 import okhttp3.OkHttpClient
 import okhttp3.RequestBody
+import org.json.JSONObject
 import okhttp3.RequestBody.Companion.toRequestBody
 import java.io.File
 import java.util.Locale
@@ -46,6 +42,14 @@ data class ExtractionResult(
 
 data class DownloadReceipt(val fileName: String, val savedLocation: String)
 
+data class YoutubeVideoInfo(
+    val videoId: String,
+    val title: String,
+    val author: String,
+    val thumbnailUrl: String,
+    val watchUrl: String
+)
+
 /**
  * NewPipe Extractor for its native supported services, yt-dlp for broad multi-site
  * downloads, and Android DownloadManager for progressive NewPipe streams.
@@ -54,102 +58,90 @@ object VideoDownloaderEngine {
     private const val USER_AGENT =
         "Mozilla/5.0 (Linux; Android 14) AppleWebKit/537.36 Chrome/124.0 Mobile Safari/537.36"
 
-    @Volatile private var initialized = false
-    private val lock = Any()
+    private val http = OkHttpClient.Builder()
+        .connectTimeout(20, TimeUnit.SECONDS)
+        .readTimeout(25, TimeUnit.SECONDS)
+        .followRedirects(true)
+        .build()
 
-    private fun initializeExtractor() {
-        if (initialized) return
-        synchronized(lock) {
-            if (!initialized) {
-                NewPipe.init(ExtractorHttpDownloader())
-                initialized = true
+    /**
+     * First-party YouTube URL parser + public oEmbed metadata client.
+     * No NewPipe code, extractor, or NewPipe dependency is used.
+     */
+    fun youtubeVideoId(rawUrl: String): String? {
+        return try {
+            val uri = Uri.parse(rawUrl.trim())
+            val host = uri.host?.lowercase(Locale.ROOT) ?: return null
+            val validHost = host == "youtu.be" || host == "youtube.com" ||
+                host.endsWith(".youtube.com")
+            if (!validHost) return null
+            val id = when {
+                host == "youtu.be" -> uri.lastPathSegment
+                uri.path == "/watch" -> uri.getQueryParameter("v")
+                uri.pathSegments.firstOrNull() in setOf("shorts", "embed", "live") ->
+                    uri.pathSegments.getOrNull(1)
+                else -> null
+            } ?: return null
+            id.takeIf { it.matches(Regex("[A-Za-z0-9_-]{11}")) }
+        } catch (_: Exception) { null }
+    }
+
+    suspend fun fetchYoutubeInfo(rawUrl: String): YoutubeVideoInfo =
+        withContext(Dispatchers.IO) {
+            val id = youtubeVideoId(rawUrl)
+                ?: throw IllegalArgumentException("यह सही YouTube वीडियो लिंक नहीं है।")
+            val watchUrl = "https://www.youtube.com/watch?v=$id"
+            val endpoint = "https://www.youtube.com/oembed?url=" +
+                Uri.encode(watchUrl) + "&format=json"
+            val request = okhttp3.Request.Builder().url(endpoint)
+                .header("User-Agent", USER_AGENT).get().build()
+            http.newCall(request).execute().use { response ->
+                if (!response.isSuccessful) {
+                    throw IllegalStateException("YouTube से वीडियो की जानकारी नहीं मिली (HTTP ${response.code})।")
+                }
+                val json = JSONObject(response.body?.string().orEmpty())
+                YoutubeVideoInfo(
+                    videoId = id,
+                    title = json.optString("title", "YouTube video"),
+                    author = json.optString("author_name", "YouTube creator"),
+                    thumbnailUrl = json.optString("thumbnail_url",
+                        "https://i.ytimg.com/vi/$id/hqdefault.jpg"),
+                    watchUrl = watchUrl
+                )
             }
         }
-    }
 
     suspend fun inspect(rawUrl: String): ExtractionResult = withContext(Dispatchers.IO) {
         val url = rawUrl.trim()
         require(url.startsWith("https://", true) || url.startsWith("http://", true)) {
             "कृपया पूरा https:// लिंक डालिए।"
         }
-
         val platform = detectPlatform(url)
-        val extension = Uri.parse(url).lastPathSegment
-            ?.substringAfterLast('.', "")
-            ?.lowercase(Locale.ROOT).orEmpty()
-
-        // First-party HTTP inspection: identify real files from response headers,
-        // redirects and Content-Disposition instead of relying only on URL suffixes.
         val directFile = OwnLinkAnalyzer.inspect(url)
         if (directFile != null) {
             return@withContext ExtractionResult(
                 directFile.fileName.substringBeforeLast('.', "Direct file"),
                 platform ?: SourcePlatform.DIRECT,
-                listOf(MediaOption(
-                    "Direct download • ${directFile.mimeType}",
-                    directFile.finalUrl,
-                    directFile.extension,
-                    directFile.mimeType
-                ))
+                listOf(MediaOption("Direct download • ${directFile.mimeType}",
+                    directFile.finalUrl, directFile.extension, directFile.mimeType))
             )
         }
-
+        val extension = Uri.parse(url).lastPathSegment
+            ?.substringAfterLast('.', "")?.lowercase(Locale.ROOT).orEmpty()
         if (extension in setOf("mp4", "m4v", "webm", "mov", "mkv", "mp3", "m4a", "aac", "ogg")) {
-            return@withContext ExtractionResult(
-                "Direct media file", platform ?: SourcePlatform.DIRECT,
+            return@withContext ExtractionResult("Direct media file",
+                platform ?: SourcePlatform.DIRECT,
                 listOf(MediaOption("Direct download • .$extension", url, extension,
-                    when (extension) {
-                        "mp3" -> "audio/mpeg"
-                        "m4a", "aac" -> "audio/mp4"
-                        "webm" -> "video/webm"
-                        else -> "video/mp4"
-                    }))
-            )
+                    if (extension == "mp3") "audio/mpeg" else "video/mp4")))
         }
-
-        val source = platform ?: SourcePlatform.UNKNOWN
-        if (source in setOf(SourcePlatform.INSTAGRAM, SourcePlatform.TIKTOK,
-                SourcePlatform.FACEBOOK, SourcePlatform.X)) {
-            throw UnsupportedOperationException(
-                "${source.displayName} लिंक पहचाना गया, लेकिन NewPipeExtractor इसे सपोर्ट नहीं करता। " +
-                    "इस प्लेटफॉर्म के लिए आधिकारिक/अनुमत integration अभी बाकी है; login या सुरक्षा-पाबंदी bypass नहीं किया जाएगा।"
-            )
+        if (platform == SourcePlatform.YOUTUBE) {
+            val info = fetchYoutubeInfo(url)
+            return@withContext ExtractionResult(info.title, SourcePlatform.YOUTUBE, emptyList())
         }
-
-        initializeExtractor()
-        val service = try {
-            NewPipe.getServiceByUrl(url)
-        } catch (e: Exception) {
-            throw IllegalArgumentException(
-                "यह साइट NewPipeExtractor की supported list में नहीं है। Supported: YouTube, SoundCloud, PeerTube, Bandcamp और media.ccc.de.", e
-            )
-        }
-
-        val extractor = service.getStreamExtractor(url)
-        extractor.fetchPage()
-        val options = extractor.getVideoStreams()
-            .filter { it.getDeliveryMethod() == DeliveryMethod.PROGRESSIVE_HTTP }
-            .filter { it.getContent().isNotBlank() }
-            .map { stream ->
-                val format = stream.getFormat()
-                val suffix = format?.getSuffix()?.takeIf { it.isNotBlank() } ?: "mp4"
-                val formatName = format?.getName()?.takeIf { it.isNotBlank() } ?: suffix.uppercase()
-                val resolution = stream.getResolution().takeIf { it.isNotBlank() }
-                MediaOption(
-                    listOfNotNull(formatName, resolution).joinToString(" • "),
-                    stream.getContent(), suffix, format?.getMimeType() ?: "video/mp4"
-                )
-            }
-            .distinctBy { it.url }
-
-        if (options.isEmpty()) {
-            throw IllegalStateException(
-                "वीडियो स्ट्रीम नहीं मिली। हो सकता है यह private, live, restricted या अभी unsupported format हो।"
-            )
-        }
-        ExtractionResult(extractor.getName().ifBlank { "Video" }, source, options)
+        throw UnsupportedOperationException(
+            "इस लिंक के लिए अपना extractor अभी उपलब्ध नहीं है। Direct media file URL डालें।"
+        )
     }
-
 
     /**
      * Broad site support through yt-dlp. Output is first written to app storage,
@@ -391,31 +383,4 @@ object VideoDownloaderEngine {
         }
     }
 
-    private class ExtractorHttpDownloader : Downloader() {
-        private val client = OkHttpClient.Builder()
-            .connectTimeout(20, TimeUnit.SECONDS)
-            .readTimeout(30, TimeUnit.SECONDS)
-            .followRedirects(true).build()
-
-        override fun execute(request: Request): Response {
-            val method = request.httpMethod()
-            val data = request.dataToSend()
-            val body: RequestBody? = when (method.uppercase(Locale.ROOT)) {
-                "GET", "HEAD" -> null
-                else -> (data ?: ByteArray(0)).toRequestBody()
-            }
-            val builder = okhttp3.Request.Builder()
-                .url(request.url()).method(method, body).header("User-Agent", USER_AGENT)
-            request.headers().forEach { (name, values) ->
-                builder.removeHeader(name)
-                values.forEach { value -> builder.addHeader(name, value) }
-            }
-            client.newCall(builder.build()).execute().use { response ->
-                return Response(
-                    response.code, response.message, response.headers.toMultimap(),
-                    response.body?.string().orEmpty(), response.request.url.toString()
-                )
-            }
-        }
-    }
 }
