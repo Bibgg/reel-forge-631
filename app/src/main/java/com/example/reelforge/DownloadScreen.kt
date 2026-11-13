@@ -162,9 +162,9 @@ fun DownloadScreen() {
                             )
                         )
                         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            QuickSearchChip("🎵 Music", FestivalPink) { searchVideos("Nepali music") }
-                            QuickSearchChip("🎬 Movies", FestivalBlue) { searchVideos("popular movie trailers") }
-                            QuickSearchChip("✨ Trending", FestivalGreen) { searchVideos("trending videos") }
+                            QuickSearchChip("🎵 Music", FestivalPink, Modifier.weight(1f)) { searchVideos("Nepali music") }
+                            QuickSearchChip("🎬 Movies", FestivalBlue, Modifier.weight(1f)) { searchVideos("popular movie trailers") }
+                            QuickSearchChip("✨ Trending", FestivalGreen, Modifier.weight(1f)) { searchVideos("trending videos") }
                         }
                     }
                 }
@@ -270,9 +270,9 @@ fun DownloadScreen() {
 }
 
 @Composable
-private fun QuickSearchChip(label: String, tint: Color, onClick: () -> Unit) {
+private fun QuickSearchChip(label: String, tint: Color, modifier: Modifier = Modifier, onClick: () -> Unit) {
     Surface(
-        modifier = Modifier.weight(1f).clickable(onClick = onClick),
+        modifier = modifier.clickable(onClick = onClick),
         color = tint.copy(alpha = 0.15f),
         shape = RoundedCornerShape(13.dp),
         border = androidx.compose.foundation.BorderStroke(1.dp, tint.copy(alpha = 0.48f))
