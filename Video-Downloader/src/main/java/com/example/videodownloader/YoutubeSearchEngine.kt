@@ -68,10 +68,10 @@ object YoutubeSearchEngine {
         withContext(Dispatchers.IO) {
             require(query.isNotBlank()) { "वीडियो खोजने के लिए नाम लिखें।" }
             ensureInitialized()
-            val youtube = NewPipe.getServiceByName("YouTube")
+            val youtube = NewPipe.getServiceByUrl("https://www.youtube.com")
             val extractor = youtube.getSearchExtractor(query, listOf("videos"), "")
             extractor.fetchPage()
-            extractor.initialPage.items
+            extractor.getInitialPage().items
                 .filterIsInstance<StreamInfoItem>()
                 .take(limit)
                 .map { item ->
@@ -81,7 +81,7 @@ object YoutubeSearchEngine {
                         thumbnailUrl = item.thumbnails.firstOrNull()?.url.orEmpty(),
                         uploader = item.uploaderName,
                         durationSeconds = item.duration,
-                        views = item.viewCount?.toString().orEmpty()
+                        views = item.viewCount.toString()
                     )
                 }
         }
