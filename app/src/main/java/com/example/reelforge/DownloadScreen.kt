@@ -193,8 +193,7 @@ fun DownloadScreen() {
                         ) {
                             Text("🎆", fontSize = 38.sp)
                             Text("Find something amazing", color = Color.White, fontSize = 18.sp, fontWeight = FontWeight.Bold)
-                            Text("ऊपर Search में वीडियो का नाम लिखें।
-आपके वीडियो यहाँ दिखाई देंगे।",
+                            Text("ऊपर Search में वीडियो का नाम लिखें और वीडियो यहाँ देखें.",
                                 color = AppMuted, fontSize = 12.sp, lineHeight = 19.sp)
                         }
                     }
